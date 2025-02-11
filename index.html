@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запись на смену</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #1a1a1a;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .step.active {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fff;
+            transition: box-shadow 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+            outline: none;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .calendar div {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .calendar div.selected {
+            background-color: #ff6900;
+            color: white;
+            border-color: #ff6900;
+        }
+
+        .confirmation {
+            background: #e9f5ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Запись на смену</h1>
+
+    <!-- Шаг 1: Ввод ФИО -->
+    <div id="step1" class="step active">
+        <p>Введите ваше ФИО:</p>
+        <input type="text" id="name" placeholder="Иванов Иван Иванович">
+        <button onclick="nextStep(2)">Далее</button>
+    </div>
+
+    <!-- Шаг 2: Выбор месяца -->
+    <div id="step2" class="step">
+        <p>Выберите месяц:</p>
+        <select id="month">
+            <option value="1">Январь</option>
+            <option value="2">Февраль</option>
+            <option value="3">Март</option>
+            <option value="4">Апрель</option>
+            <option value="5">Май</option>
+            <option value="6">Июнь</option>
+            <option value="7">Июль</option>
+            <option value="8">Август</option>
+            <option value="9">Сентябрь</option>
+            <option value="10">Октябрь</option>
+            <option value="11">Ноябрь</option>
+            <option value="12">Декабрь</option>
+        </select>
+        <button onclick="nextStep(3)">Далее</button>
+    </div>
+
+    <!-- Шаг 3: Выбор должности -->
+    <div id="step3" class="step">
+        <p>Выберите должность:</p>
+        <select id="position">
+            <option value="сборщик заказов">Сборщик заказов</option>
+            <option value="грузчик">Грузчик</option>
+            <option value="контролер отгрузки">Контролер отгрузки</option>
+            <option value="уборщица">Уборщица</option>
+            <option value="ВЭШ">ВЭШ</option>
+        </select>
+        <button onclick="nextStep(4)">Далее</button>
+    </div>
+
+    <!-- Шаг 4: Выбор смены -->
+    <div id="step4" class="step">
+        <p>Выберите смену:</p>
+        <select id="shift">
+            <option value="дневная">Дневная смена</option>
+            <option value="ночная">Ночная смена</option>
+        </select>
+        <button onclick="nextStep(5)">Далее</button>
+    </div>
+
+    <!-- Шаг 5: Выбор дней -->
+    <div id="step5" class="step">
+        <p>Выберите дни:</p>
+        <div class="calendar" id="calendar"></div>
+        <button onclick="submit()">Записаться</button>
+    </div>
+
+    <!-- Шаг 6: Подтверждение -->
+    <div id="step6" class="step">
+        <div class="confirmation">
+            <p id="confirmationMessage"></p>
+            <p>По вопросам отмены смен или заменам необходимо обращаться к Эльдару.</p>
+            <p>Телефон: +7 (937) 151-00-57</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedDays = [];
+        const monthNames = [
+            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+        ];
+
+        function validateInput(inputElement, errorMessage) {
+            if (!inputElement.value.trim()) {
+                alert(errorMessage);
+                return false;
+            }
+            return true;
+        }
+
+        function nextStep(step) {
+            if (step === 2 && !validateInput(document.getElementById('name'), 'Введите ваше ФИО')) {
+                return;
+            }
+            document.querySelector('.step.active').classList.remove('active');
+            document.getElementById(`step${step}`).classList.add('active');
+            if (step === 5) {
+                generateCalendar();
+            }
+        }
+
+        function generateCalendar() {
+            const month = parseInt(document.getElementById('month').value);
+            const year = new Date().getFullYear();
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const firstDay = new Date(year, month - 1, 1).getDay();
+
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+
+            // Дни недели
+            const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+            const headerRow = document.createElement('div');
+            headerRow.style.display = 'grid';
+            headerRow.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            headerRow.style.gap = '5px';
+            headerRow.style.marginBottom = '10px';
+
+            weekdays.forEach(day => {
+                const dayCell = document.createElement('div');
+                dayCell.textContent = day;
+                dayCell.style.textAlign = 'center';
+                dayCell.style.fontWeight = 'bold';
+                dayCell.style.color = '#6c757d';
+                headerRow.appendChild(dayCell);
+            });
+
+            calendar.appendChild(headerRow);
+
+            // Пустые ячейки для начала недели
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                calendar.appendChild(emptyCell);
+            }
+
+            // Дни месяца
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.textContent = day;
+                dayElement.addEventListener('click', () => {
+                    dayElement.classList.toggle('selected');
+                    const selectedDay = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    if (selectedDays.includes(selectedDay)) {
+                        selectedDays = selectedDays.filter(d => d !== selectedDay);
+                    } else {
+                        selectedDays.push(selectedDay);
+                    }
+                });
+                calendar.appendChild(dayElement);
+            }
+        }
+
+        function submit() {
+            const name = document.getElementById('name').value;
+            const position = document.getElementById('position').value;
+            const shift = document.getElementById('shift').value;
+            const monthIndex = parseInt(document.getElementById('month').value) - 1;
+            const year = new Date().getFullYear();
+            const formattedDays = selectedDays.map(day => {
+                const date = new Date(day);
+                return `${date.getDate()} ${monthNames[monthIndex]} ${year}`;
+            }).join(', ');
+
+            if (!validateInput(document.getElementById('name'), 'Введите ваше ФИО')) return;
+            if (!selectedDays.length) {
+                alert('Выберите хотя бы один день!');
+                return;
+            }
+
+            document.getElementById('confirmationMessage').innerText =
+                `${name}, вы записались на смены ${formattedDays}. \n\n` +
+                `По вопросам отмены смен или заменам необходимо обращаться к Эльдару. \n` +
+                `Телефон: +7 (937) 151-00-57`;
+
+            nextStep(6);
+
+            const data = {
+                name,
+                position,
+                shift,
+                days: selectedDays
+            };
+
+            Telegram.WebApp.sendData(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
